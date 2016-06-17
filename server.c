@@ -12,11 +12,13 @@
 #include <netinet/in.h>
 
 #include "server.h"
+#include "tree.h"
 
 /* function prototypes */
-void dostuff(int); 
+int prompt(int sock);
+int parse (char* message, int sock);
 void* connection (void *sock_void);
-void parse (char* message, int sock);
+
 
 void error(const char *msg)
 {
@@ -90,12 +92,16 @@ int main(int argc, char *argv[])
 }
 
 
-/******** DOSTUFF() *********************
- There is a separate instance of this function 
- for each connection.  It handles all communication
- once a connnection has been established.
-*****************************************/
-void dostuff (int sock)
+int parse (char* message, int sock)
+{
+  int n;
+  printf("Got: %s", message);
+  n = write(sock,"message recieved",15);
+  if (n < 0) error("ERROR writing to socket");
+  return 1;
+}
+
+int prompt(int sock)
 {
   int n;
   char buffer[256];
@@ -104,16 +110,9 @@ void dostuff (int sock)
   n = read(sock, buffer, 255);
   if (n < 0) error("ERROR reading from socket");
   
-  parse( buffer, sock );
+  return parse( buffer, sock ); //0, stop. 1, continue.
 }
 
-void parse (char* message, int sock)
-{
-  int n;
-  printf("Got: %s", message);
-  n = write(sock,"message recieved",15);
-  if (n < 0) error("ERROR writing to socket");
-}
 
 /**
  * This function will become a connection thread!
@@ -123,7 +122,7 @@ void parse (char* message, int sock)
 void* connection (void *sock_void)
 {
   int sock = (long) sock_void;
-  while (1) { dostuff ( sock ); }
+  while (prompt ( sock )){}
   close(sock);  //maybe don't want to do this.
   sem_post(&active_connections); //release spot in the queue
 }

@@ -4,9 +4,13 @@
 #include <semaphore.h>
 #include <pthread.h>
 
+#include "tree.h"
+
 #define MAX_CLIENTS (5)
 pthread_mutex_t mutex;       /* mutex used to protect regions */
 sem_t active_connections;            /* the semaphores to limit the number of clients */
+Tree* users;
+
 
 #endif
 

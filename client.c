@@ -7,11 +7,25 @@
 #include <netinet/in.h>
 #include <netdb.h> 
 
+#include  <signal.h>
+#include "client.h"
+
+static volatile int running = 1;
+
+
 void error(const char *msg)
 {
   perror(msg);
   exit(0);
 }
+
+void  inthandler(int sig)
+{
+  printf("Leaving server...\n");
+  running = 0;
+}
+
+
 
 int main(int argc, char *argv[])
 {
@@ -45,11 +59,17 @@ int main(int argc, char *argv[])
   if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) 
     error("ERROR connecting");
 
-  while(1)
+  signal(SIGINT, inthandler);
+
+  while(running)
     {
-      printf("Please enter the message: ");
+      printf("--> ");
       bzero(buffer,256);
       fgets(buffer,255,stdin);
+      if((buffer[0] == '\n')|(strlen(buffer) == 0)){
+	continue;
+      }
+
       n = write(sockfd,buffer,strlen(buffer));
       if (n < 0) 
 	error("ERROR writing to socket");

@@ -1,87 +1,188 @@
-typedef struct binaryTree
-{
-  struct node* root;
-  int count;
-} Tree;
+#include "tree.h"
+#define DEBUG (0)
 
-typedef struct node
+void displayTree(Tree* t)
 {
-  struct user* data;
-  struct node *right;
-  struct node *left;
-} Node;
+  printf("------------------------------\n");
+  displayTreeHelper(t->root);
+  printf("\n------------------------------\n");
+}
 
-typedef struct user
+void displayTreeHelper(Node* current)
 {
-  char* id;
-  int socket;
-} User;
+  if (current == NULL) return;
+  displayTreeHelper(current->left);
+  printf("%s ", current->data->id );
+  displayTreeHelper(current->right);
+}
 
-Tree* newUserTree(User* root)
+int compare(User* a, User* b)
 {
-  Tree* new  = malloc(sizeof(Tree));
-  new->root  = root;
+  return strcmp(a->id, b->id);
+}
+
+Tree* newTree()
+{
+  Tree* newTree  = (Tree*)malloc(sizeof(Tree));
+
+  if ( newTree == NULL  )
+    {
+      printf("%s\n", "Failed to malloc");
+      exit(1);
+    }
+  
+#if DEBUG 
+  printf("%s\n", "New user tree created."); 
+#endif
+  
+  return newTree;
+}
+
+Node* newNode(User* data)
+{
+  Node* new = (Node*)malloc(sizeof(Node));
+  if ( new == NULL )
+    {
+      printf("%s\n", "Failed to malloc");
+      exit(1);
+    }
+  
+  new->data  = data;
   new->right = NULL;
   new->left  = NULL;
+
+#if DEBUG 
+  printf("%s\n", "New node created.");
+#endif
 
   return new;
 }
 
-User* newUser(
-
-
-
-int add(Tree* t, User* data)
+User* newUser(char* name, int socket)
 {
-  return addData(t->root, data);
-}
-
-int addData(Node* current, User* data)
-{
-  if ( current->data == NULL )
+  User* newUser = (User*)malloc(sizeof(User));
+  if ( newUser == NULL )   
     {
-      current->data = data;
-      count++;
-      return 1;
+      printf("%s\n", "Failed to malloc");
+      exit(1);
     }
 
-  int c = compare( Node->data, data );
-  if      ( c == 1)  addData( Node->left,  data ); //current is greater, go left
-  else if ( c == 0 ) addData( Node->right, data ); //current is smaller, go right
-  else return -1; //user already exists
+  newUser->id = name;
+  newUser->socket = socket;
+
+#if DEBUG 
+  printf("%s\n", "New user created.");
+#endif
+
+  return newUser;
 }
 
-int remove(Tree* t, User* data)
+Tree* addUser(Tree* t, char* id, int socket)
 {
-  return removeData(t->root, data);
+#if DEBUG 
+  printf("%s %s\n", "Adding user: ", id);
+#endif
+
+  User* u  = newUser(id, socket);					 
+  t->root = addUserHelper(t->root, u);
+  return t;
 }
 
-int removeData(Tree* t, User* data)
+Node* addUserHelper(Node* current, User* data)
 {
-  if ( current->data == NULL ) 
-    return -1; //not found
+#if DEBUG
+    printf("%s %s\n", "Adding user: ", "helper");
+#endif
+  if ( current == NULL )
+    {
+      return newNode(data);
+    }
+
+  int c = compare( current->data, data );
+  if      ( c > 0 ) current->left  = addUserHelper( current->left,  data ); //current is greater, go left
+  else if ( c < 0 ) current->right = addUserHelper( current->right, data ); //current is smaller, go right
+  //else //user already exists --> itll fail quietly, which is bad
+
+  return current;
+}
+
+Node* removeUser(Tree* t, User* data)
+{
+  return removeUserHelper(t->root, data);
+}
+
+Node* removeUserHelper(Node* current, User* data)
+{
+  if ( current == NULL ) 
+    return current; //not found
   
-  int c = compare( Node->data, data );
-  if      ( c == 1 ) addRemote( Node->left,  data ); //current is greater, go left
-  else if ( c == 0 ) addRemote( Node->right, data ); //current is smaller, go right
+  int c = compare( current->data, data );
+  if      ( c > 0 ) current->left  = removeUserHelper( current->left,  data ); //current is greater, go left
+  else if ( c < 0 ) current->right = removeUserHelper( current->right, data ); //current is smaller, go right
   else //the target is found 
   {
-    current->data = data;
-    count++;
-    return 1;
+    if ( current->left == NULL ) 
+      {
+	Node *temp = current->right;
+	deleteNode( current );
+	return temp;
+      }
+    else if ( current->right == NULL)
+      {
+	Node *temp = current->left;
+	deleteNode( current );
+	return temp;
+      }
+  
+    Node* temp = min( current->right );
+    current->data = temp->data;
+    current->right = removeUserHelper( current->right, temp->data );
   }
+  return current;
 }
 
-User* find(Tree* t, char* name)
+Node* min(Node* current)
 {
-  return findData(t->root, name);
+  if (current->left == NULL) return current;
+  else min(current->left);
 }
-user* findData(Node* current, char* name)
+
+User* findUser(Tree* t, char* name)
 {
-  int c = strcmp( current->root->id, name )
-
+  return findUserHelper(t->root, name);
 }
 
-void display(Tree* t);
+User* findUserHelper(Node* current, char* data)
+{
+  if ( current == NULL )
+    return current;
 
+  int c = strcmp( current->data->id, data );
+  if      ( c > 0 ) return findUserHelper( current->left,  data ); //current is greater, go left
+  else if ( c < 0 ) return findUserHelper( current->right, data ); //current is smaller, go right
+  else return current->data; //user already exists
+}
 
+void deleteNode(Node* n)
+{
+  free( n );       //free node
+}
+
+void deleteNodeData(Node* n)
+{
+  free( n->data ); //free user
+  free( n );       //free node
+}
+
+void deleteTree(Tree* t)
+{
+  deleteAll( t->root );
+}
+
+void deleteAll(Node* n)
+{
+  if ( n == NULL ) return;
+  deleteAll( n->left  );
+  deleteAll( n->right );
+  deleteNodeData( n );
+}
