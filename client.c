@@ -69,7 +69,6 @@ int main(int argc, char *argv[])
       if((buffer[0] == '\n')|(strlen(buffer) == 0)){
 	continue;
       }
-
       n = write(sockfd,buffer,strlen(buffer));
       if (n < 0) 
 	error("ERROR writing to socket");
