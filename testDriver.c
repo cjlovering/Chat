@@ -20,6 +20,10 @@ int main()
   
   removeUser(t, r6);
   displayTree(t);
+
+  if (validate(t, "james")) printf("Correctly validated.\n");
+  if (!validate(t, "pop")) printf("Correctly did not validate.\n");
+  
   
   return 0;
 }

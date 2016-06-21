@@ -1,6 +1,27 @@
 #include "tree.h"
 #define DEBUG (0)
 
+int validate(Tree* t, char* username)
+{
+  return validateHelper(t->root, username);
+}
+
+int validateHelper(Node* current, char* data)
+{
+#if DEBUG
+    printf("%s %s\n", "Adding user: ", "helper");
+#endif
+  if ( current == NULL )
+    {
+      return 1;//valid
+    }
+
+  int c = strcmp( current->data->id, data );
+  if      ( c > 0 ) return  validateHelper( current->left,  data ); //current is greater, go left
+  else if ( c < 0 ) return  validateHelper( current->right, data ); //current is smaller, go right
+  return 0; //invalid
+}
+
 void displayTree(Tree* t)
 {
   printf("------------------------------\n");
@@ -155,7 +176,7 @@ User* findUser(Tree* t, char* name)
 User* findUserHelper(Node* current, char* data)
 {
   if ( current == NULL )
-    return current;
+    return NULL;
 
   int c = strcmp( current->data->id, data );
   if      ( c > 0 ) return findUserHelper( current->left,  data ); //current is greater, go left

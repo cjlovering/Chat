@@ -25,6 +25,10 @@ typedef struct user
   int socket;
 } User;
 
+
+
+int validate(Tree* t, char* username);
+int validateHelper(Node* t, char* username);
 Node* newNode(User* data);
 void displayTree(Tree* t);
 void displayTreeHelper(Node* current);

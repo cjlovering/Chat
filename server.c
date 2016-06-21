@@ -65,8 +65,10 @@ int main(int argc, char *argv[])
       exit(1);
     } 
 
-  while (1) {
-    sem_wait(&active_connections); //
+  users = newTree();
+  
+  while (1) {    
+    sem_wait( &active_connections ); //
 
     /* block on  new client */
     newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
@@ -76,6 +78,43 @@ int main(int argc, char *argv[])
     
     pthread_t current_thread;
 
+    // get user name and validate!
+    char userbuffer[256];
+    
+    bzero(userbuffer,256);
+    int n = read(newsockfd, userbuffer, 255);
+    if (n < 0) error("ERROR reading from socket");
+
+    printf("New user %s attempting to join...\n", userbuffer);
+    
+    //determine if user is unique
+    int valid;
+    if ( valid = validate(users, userbuffer) )
+      {
+	//valid = 1
+	int z = write( newsockfd, &valid, sizeof(int));
+	if (z < 0) error("ERROR writing to socket");
+
+	//create and add user
+	addUser( users, userbuffer, newsockfd );
+
+	//user valid and added
+	printf("User %s valid and added!\n", userbuffer);
+	
+      }
+    else
+      {
+	//valid = 0;
+	sem_post(&active_connections); //release spot in the queue
+	close(newsockfd);
+	printf("User %s is invalid and connection was dropped.\n", userbuffer);
+	continue;
+	//for now just end it!
+	//continue;
+      }
+
+    
+   
     //TODO: implement  -->
     //threads.push( current_thread );
 
