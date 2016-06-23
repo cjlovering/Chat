@@ -7,8 +7,13 @@
 #include <netinet/in.h>
 #include <netdb.h> 
 
+#include <errno.h>
+#include <signal.h>
+
 #include  <signal.h>
 #include "client.h"
+
+#define DEBUG (1)
 
 void error(const char *msg);
 void inthandler(int sig);
@@ -19,6 +24,7 @@ int verify(char* username);
 
 int sockfd;
 static volatile int running = 1;
+void sigint_handler(int sig);
 
 int main(int argc, char *argv[])
 {
@@ -52,7 +58,20 @@ int main(int argc, char *argv[])
   if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) 
     error("ERROR connecting");
 
-
+  /**** handling signals ****/
+  struct sigaction sa;
+  
+  sa.sa_handler = sigint_handler;
+  sa.sa_flags = 0; // or SA_RESTART
+  sigemptyset(&sa.sa_mask);
+    
+  if ( sigaction(SIGINT, &sa, NULL) == -1 ) 
+  {
+    perror("sigaction");
+    exit(1);
+  }
+  
+  /**** verification ****/
   char username[20];
 
   printf("Enter user name: ");
@@ -68,7 +87,7 @@ int main(int argc, char *argv[])
     printf("Hi %s! Welcome to that chat!\n", username);
   }
 
-  signal(SIGINT, inthandler);
+  //signal(SIGINT, inthandler);
 
   pthread_t threads[2];
 
@@ -95,18 +114,24 @@ void* writer(void* username)
   char buffer[256];
   int n;
 
-  while(1)
+  while(running)
+  {
+    printf("--> ");
+    bzero(buffer,256);
+    fgets(buffer,255,stdin);
+    if((buffer[0] == '\n')|(strlen(buffer) == 0))
+      continue;
+    
+    if (strcmp(buffer, "exit") == 0)
     {
-      printf("--> ");
-      bzero(buffer,256);
-      fgets(buffer,255,stdin);
-      if((buffer[0] == '\n')|(strlen(buffer) == 0)){
-	continue;
-      }
-      n = write(sockfd,buffer,strlen(buffer));
-      if (n < 0) 
-	error("ERROR writing to socket");
-    }  
+      running = 0;
+      continue;
+    }
+    n = send(sockfd,buffer,strlen(buffer), MSG_NOSIGNAL);
+    if (n < 0) 
+      error("ERROR writing to socket");
+  }  
+  //handle exit
 }
 
 void* reader(void* null)
@@ -114,10 +139,10 @@ void* reader(void* null)
   char buffer[256];
   int n;
   
-  while(1)
+  while(running)
     {
       bzero(buffer, 256);
-      n = read(sockfd,buffer,255);
+      n = recv(sockfd,buffer,255,0);
       if (n < 0)
         error("ERROR reading from socket");
       printf("%s\n",buffer);
@@ -126,22 +151,23 @@ void* reader(void* null)
 
 int verify( char* username )
 {
-  char*  buffer[256];
   //write name to server
-  int n = write(sockfd,buffer,strlen(username));
+#if DEBUG
+  printf("Asking server for validation of username %s...\n", username);
+#endif
+  int n = send(sockfd,username,strlen(username), MSG_NOSIGNAL);
 
   if (n < 0) 
     error("ERROR writing to socket");
 
-  //wait for confirmation from server that its a valid name
-  bzero(buffer, 256);
-  
+  //wait for confirmation from server that its a valid name  
   int valid;
-  n = read(sockfd , &valid, sizeof(int));
-  
-  //n = read(sockfd,buffer,255);
+  n = recv(sockfd , &valid, sizeof(int), 0);
   if (n < 0)
     error("ERROR reading from socket");
+#if DEBUG
+  printf("Recieved response from server...\n");
+#endif
 
   return valid;
 }
@@ -157,3 +183,6 @@ void inthandler(int sig)
   printf("Leaving server...\n");
   running = 0;
 }
+
+void sigint_handler(int sig)
+{}//do nothing

@@ -1,4 +1,4 @@
-/* A simple server in the internet domain using TCP
+/* A simple server in the internet domain usin#include <stdio.h> TCP
    The port number is passed as an argument 
    This version runs forever, forking off a separate 
    process for each connection
@@ -11,15 +11,22 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include <errno.h>
+#include <signal.h>
+
 #include "server.h"
 #include "tree.h"
+
+static volatile int running = 1;
 
 /* function prototypes */
 int prompt(int sock);
 int parse (char* message, int sock);
 void* connection (void *sock_void);
-
-
+void* interactive(void *zero);
+char* trim(char* str);
+void sigint_handler(int sig); /* prototype */
+ 
 void error(const char *msg)
 {
   perror(msg);
@@ -65,9 +72,32 @@ int main(int argc, char *argv[])
       exit(1);
     } 
 
+  /* handling signals */
+  struct sigaction sa;
+  sa.sa_handler = sigint_handler;
+  sa.sa_flags = 0; // or SA_RESTART
+  sigemptyset(&sa.sa_mask);
+  
+  if (sigaction(SIGINT, &sa, NULL) == -1) 
+  {
+    perror("sigaction");
+    exit(1);
+  }
+
+  pthread_t interactive_thread;
+  /* create an interactive cli for server */
+  if ( pthread_create( &interactive_thread, NULL, interactive, (void*)(intptr_t)0 ) != 0 )
+  {
+    perror("pthread_create");
+    exit(1);
+  }
+  
+
+  /* create structure for keeping track of users */
   users = newTree();
   
-  while (1) {    
+  while (running) 
+  {    
     sem_wait( &active_connections ); //
 
     /* block on  new client */
@@ -79,8 +109,7 @@ int main(int argc, char *argv[])
     pthread_t current_thread;
 
     // get user name and validate!
-    char userbuffer[256];
-    
+    char* userbuffer = malloc(sizeof(char) * 256);//[256];    
     bzero(userbuffer,256);
     int n = read(newsockfd, userbuffer, 255);
     if (n < 0) error("ERROR reading from socket");
@@ -90,41 +119,43 @@ int main(int argc, char *argv[])
     //determine if user is unique
     int valid;
     if ( valid = validate(users, userbuffer) )
-      {
-	//valid = 1
-	int z = write( newsockfd, &valid, sizeof(int));
-	if (z < 0) error("ERROR writing to socket");
+    {
+      //valid = 1
+      int z = write( newsockfd, &valid, sizeof(int));
+      if (z < 0) error("ERROR writing to socket");
 
-	//create and add user
-	addUser( users, userbuffer, newsockfd );
+      //create and add user
+      addUser( users, userbuffer, newsockfd );
 
-	//user valid and added
-	printf("User %s valid and added!\n", userbuffer);
-	
-      }
+      //user valid and added
+      printf("User %s valid and added!\n", userbuffer);
+    }
     else
-      {
-	//valid = 0;
-	sem_post(&active_connections); //release spot in the queue
-	close(newsockfd);
-	printf("User %s is invalid and connection was dropped.\n", userbuffer);
-	continue;
-	//for now just end it!
-	//continue;
-      }
-
-    
+    {
+      //valid = 0;
+      free(userbuffer);
+      sem_post(&active_connections); //release spot in the queue
+      close(newsockfd);
+      printf("User %s is invalid and connection was dropped.\n", userbuffer);
+      continue;
+      //for now just end it!
+      //continue;
+    }
    
     //TODO: implement  -->
     //threads.push( current_thread );
 
-    if( pthread_create( &current_thread, NULL, connection, (void *)newsockfd ) != 0 )
-      {
-	perror("pthread_create");
-	exit(1);
-      }
+    if( pthread_create( &current_thread, NULL, connection, (void*)(intptr_t)newsockfd ) != 0 )
+    {
+      perror("pthread_create");
+      exit(1);
+    }
     
   } /* end of while */
+
+  //clean up
+  //wait on all threads closing
+
 
   close(sockfd);
   return 0; /* we never get here */
@@ -135,7 +166,7 @@ int parse (char* message, int sock)
 {
   int n;
   printf("Got: %s", message);
-  n = write(sock,"message recieved",15);
+  n = send(sock,"message recieved",15, MSG_NOSIGNAL);
   if (n < 0) error("ERROR writing to socket");
   return 1;
 }
@@ -160,10 +191,38 @@ int prompt(int sock)
  */
 void* connection (void *sock_void)
 {
-  int sock = (long) sock_void;
-  while (prompt ( sock )){}
+  int sock = (intptr_t)sock_void;
+  while (running){ prompt ( sock ); }
+  printf("closing connection");
   close(sock);  //maybe don't want to do this.
   sem_post(&active_connections); //release spot in the queue
+}
+
+void* interactive(void *zero)
+{
+  char buffer[256];
+
+  while(running)
+  {
+    printf("--> ");
+    bzero(buffer,256);
+    fgets(buffer,255,stdin);
+    if((buffer[0] == '\n')|(strlen(buffer) == 0))
+      continue;
+    printf("input = %s\n", buffer);
+    if (strcmp(trim(buffer), "exit") == 0)
+    {
+      printf("exiting now!\n");
+      running = 0;
+      continue;
+    }
+  }
+
+ //close all threads
+
+ //end all clients
+
+
 }
 
 /* mutex functions */
@@ -177,3 +236,27 @@ void EndRegion()
   pthread_mutex_unlock(&mutex);
 }
 
+void sigint_handler(int sig)
+{
+  printf("Ignoring interrupt. If you want to kill the server, enter: exit");
+}
+
+char* trim(char* str)
+{
+  char *end;
+
+  // Trim leading space
+  while(isspace(*str)) str++;
+
+  if(*str == 0)  // All spaces?
+    return str;
+
+  // Trim trailing space
+  end = str + strlen(str) - 1;
+  while(end > str && isspace(*end)) end--;
+
+  // Write new null terminator
+  *(end+1) = '\0';
+
+  return str;
+}

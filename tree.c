@@ -1,15 +1,18 @@
 #include "tree.h"
-#define DEBUG (0)
+#define DEBUG (1)
 
 int validate(Tree* t, char* username)
 {
+#if DEBUG
+  displayTree(t);
+#endif
   return validateHelper(t->root, username);
 }
 
 int validateHelper(Node* current, char* data)
 {
 #if DEBUG
-    printf("%s %s\n", "Adding user: ", "helper");
+    printf("%s %s\n", "Validating user: ", data);
 #endif
   if ( current == NULL )
     {
@@ -19,6 +22,8 @@ int validateHelper(Node* current, char* data)
   int c = strcmp( current->data->id, data );
   if      ( c > 0 ) return  validateHelper( current->left,  data ); //current is greater, go left
   else if ( c < 0 ) return  validateHelper( current->right, data ); //current is smaller, go right
+  
+
   return 0; //invalid
 }
 
@@ -104,16 +109,13 @@ Tree* addUser(Tree* t, char* id, int socket)
   printf("%s %s\n", "Adding user: ", id);
 #endif
 
-  User* u  = newUser(id, socket);					 
+  User* u = newUser(id, socket);					 
   t->root = addUserHelper(t->root, u);
   return t;
 }
 
 Node* addUserHelper(Node* current, User* data)
 {
-#if DEBUG
-    printf("%s %s\n", "Adding user: ", "helper");
-#endif
   if ( current == NULL )
     {
       return newNode(data);

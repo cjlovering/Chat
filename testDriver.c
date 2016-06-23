@@ -22,8 +22,23 @@ int main()
   displayTree(t);
 
   if (validate(t, "james")) printf("Correctly validated.\n");
+  else printf("ERROR\n");
+  
   if (!validate(t, "pop")) printf("Correctly did not validate.\n");
-  
-  
+  else printf("ERROR\n");
+
+  // testing 
+  Tree* t2 = newTree();
+  addUser(t2, "Xeno", 12);  
+  addUser(t2, "Rock", 12);
+  if (validate(t2, "james")) printf("Correctly validated.\n");
+  else printf("ERROR\n");
+
+  if (!validate(t2, "Xeno")) printf("Correctly did not validate.\n");
+  else printf("ERROR\n");
+
+  if (!validate(t2, "Rock")) printf("Correctly did not validate.\n");
+  else printf("ERROR\n");
+
   return 0;
 }
