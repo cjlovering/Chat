@@ -175,7 +175,11 @@ int parse (char* message, int sock)
   
   if ( strncmp(message, leave, strlen(leave)) == 0)
   {
-    printf("USER leaving");
+    char* name;
+    char* key;
+    scanf("%s %s", key, name);
+ 
+    printf("USER %s leaving", name);
     //client leaving
     //remove him from users
     

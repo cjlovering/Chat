@@ -23,8 +23,10 @@ void* reader(void* user);
 int verify(char* username);
 void printUsage(void);
 void closeClientConnection(void);
+char* formMessage(char* msg);
 
 int sockfd;
+char username[20];
 static volatile int running = 1;
 void sigint_handler(int sig);
 
@@ -74,7 +76,6 @@ int main(int argc, char *argv[])
   }
   
   /**** verification ****/
-  char username[20];
 
   printf("Enter user name: ");
   scanf("%s", username);
@@ -149,7 +150,8 @@ void* writer(void* username)
   printf("exiting....\n");
 #endif
 
-  char* leave = "_EXIT_";
+  
+  char* leave = strcat("_EXIT_ ", username);
   n = send(sockfd,leave,strlen(leave), MSG_NOSIGNAL);
   closeClientConnection();
 }
@@ -231,4 +233,13 @@ void printUsage(void)
   printf("YOUR_MESSAGE  = sends to everyone in room\n");
   printf("whisper USER \"message\"\n");
   printf("---------------------------------------------\n");
+}
+
+char* formMessage(char* msg)
+{
+  char* result = malloc(sizeof(char) * (20 + 255));
+  strcpy(result, user);
+  strncat(result, " ", 1);
+  strncat(result, msg, 255);
+  return result;
 }
