@@ -51,6 +51,15 @@ int main()
   if (strcmp(s1, trim( s2 )) == 0) printf("trim worked\n");
   else printf("trim did not work\n");
   
+  //strcmpc
+  char* s3 = "_EXIT_ user";
+  char* s4 = "_EXIT";
+
+
+  //scanf
+  
+
+ 
 
   return 0;
 }

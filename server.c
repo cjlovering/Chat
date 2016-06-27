@@ -162,7 +162,6 @@ int main(int argc, char *argv[])
   //clean up
   //wait on all threads closing
 
-
   close(sockfd);
   return 0; /* we never get here */
 }
@@ -173,6 +172,10 @@ int parse (char* message, int sock)
   int n;
   char* leave = "_EXIT_";
   
+  printf("PARSE!\n");
+  printf("%s\n", message);
+
+
   if ( strncmp(message, leave, strlen(leave)) == 0)
   {
     char* name;
@@ -274,8 +277,7 @@ void EndRegion()
 
 void sigint_handler(int sig)
 {
-  printf("Ending server.");
-  running = 0;
+  destroyServer();
 }
 
 void destroyServer(void)

@@ -24,6 +24,7 @@ int verify(char* username);
 void printUsage(void);
 void closeClientConnection(void);
 char* formMessage(char* msg);
+void leaveServer();
 
 int sockfd;
 char username[20];
@@ -149,11 +150,20 @@ void* writer(void* username)
 #if DEBUG
   printf("exiting....\n");
 #endif
-
-  
-  char* leave = strcat("_EXIT_ ", username);
-  n = send(sockfd,leave,strlen(leave), MSG_NOSIGNAL);
+  leaveServer();
   closeClientConnection();
+}
+
+void leaveServer()
+{
+  char* leave = malloc(sizeof(char) * (20 + 10));
+  strncpy(leave, "_EXIT_ ", 7);
+  strcat(leave, username);
+  int n = send(sockfd, leave, strlen(leave), MSG_NOSIGNAL);
+  if (n < 0)
+        error("ERROR writing to socket");
+
+  free(leave);
 }
 
 void* reader(void* null)
@@ -210,8 +220,8 @@ void error(const char *msg)
 
 void sigint_handler(int sig)
 {
-  printf("Leaving server...\n");
-  running = 0;
+  leaveServer();
+  closeClientConnection();
 }//do nothing
 
 void closeClientConnection(void)
@@ -226,7 +236,7 @@ void closeClientConnection(void)
 void printUsage(void)
 {
   printf("---------------------------------------------\n");
-  printf("This is the Server for the Chat.\n");
+  printf("Hi %s! Welcome to the Chat.\n", username);
   printf("info / help / h      = printUsage\n");
   printf("quit / exit / leave / q  = ends service\n");
   printf("list / l                 = shows all clients\n");
@@ -238,7 +248,7 @@ void printUsage(void)
 char* formMessage(char* msg)
 {
   char* result = malloc(sizeof(char) * (20 + 255));
-  strcpy(result, user);
+  strcpy(result, username);
   strncat(result, " ", 1);
   strncat(result, msg, 255);
   return result;
