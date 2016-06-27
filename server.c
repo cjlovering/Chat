@@ -169,9 +169,6 @@ int main(int argc, char *argv[])
 
 int parse (char* message, int sock)
 {
-
-  printf("PARSE!  -> %s\n", message);
-  
   int n;
   char* leave = "_EXIT_";
   char* saveptr1;
@@ -181,28 +178,38 @@ int parse (char* message, int sock)
   
   while (inputMessages != NULL)
   {
-    printf("input m: %s", inputMessages);
     parsed[i] = inputMessages;
     i++;
     inputMessages = strtok_r(NULL, " \r\t\n", &saveptr1);
   }
 
-  printf("PARSE!\n");
-  printf("%s\n", parsed[0]);
-
   if ( strncmp(parsed[0], leave, strlen(leave)) == 0)
   {
     char* name = parsed[1];
-//    scanf("%s %s", key, name);
+    //    scanf("%s %s", key, name);
  
-    printf("USER %s leaving", name);
+    printf("USER %s leaving\n", name);
     //client leaving
     //remove him from users
+    User* u = findUser(users, name);
+    if (u == NULL) printf("user not found");
+    removeUser(users, u);
     
     //close the connection
-    
     //let all the users know he's leaving
 
+#if 0   
+    char* userLeaving = malloc(sizeof(char) * 150);
+    if (userLeaving ==  NULL)  error("malloc failed");
+    
+    strcat(userLeaving, ">>> ");
+    strcat(userLeaving, name);
+    strcat(userLeaving, " has left Chat.\n");    
+    
+    sendAll(userLeaving); 
+    free(userLeaving);
+#endif
+    
     return 0;
   }
   //else if ( strcmp(message, "__") == 0)
@@ -310,7 +317,9 @@ void destroyServer(void)
 
 void sendAll(char* msg)
 {
-  sendAllHelper(msg, users->root);
+  printf("sendall\n");
+  if(users != NULL) sendAllHelper(msg, users->root);
+  printf("sendall\n");
 }
 
 void sendAllHelper(char* msg, Node* n)

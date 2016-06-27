@@ -46,5 +46,7 @@ void deleteNode(Node* n);
 void deleteTree(Tree* t);
 void deleteAll(Node* n);
 void deleteNodeData(Node* n);
+Node* deleteUser(Tree* t, char* data);
+Node* deleteUserHelper(Node* t, char* data);
 
 #endif 

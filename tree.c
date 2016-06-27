@@ -12,18 +12,18 @@ int validate(Tree* t, char* username)
 int validateHelper(Node* current, char* data)
 {
 #if DEBUG
-    printf("%s %s\n", "Validating user: ", data);
+  printf("%s %s\n", "Validating user: ", data);
 #endif
   if ( current == NULL )
-    {
-      return 1;//valid
-    }
-
+  {
+    return 1;//valid
+  }
+  
   int c = strcmp( current->data->id, data );
   if      ( c > 0 ) return  validateHelper( current->left,  data ); //current is greater, go left
   else if ( c < 0 ) return  validateHelper( current->right, data ); //current is smaller, go right
   
-
+  
   return 0; //invalid
 }
 
@@ -52,10 +52,10 @@ Tree* newTree()
   Tree* newTree  = (Tree*)malloc(sizeof(Tree));
 
   if ( newTree == NULL  )
-    {
-      printf("%s\n", "Failed to malloc");
-      exit(1);
-    }
+  {
+    printf("%s\n", "Failed to malloc");
+    exit(1);
+  }
   
 #if DEBUG 
   printf("%s\n", "New user tree created."); 
@@ -68,10 +68,10 @@ Node* newNode(User* data)
 {
   Node* new = (Node*)malloc(sizeof(Node));
   if ( new == NULL )
-    {
-      printf("%s\n", "Failed to malloc");
-      exit(1);
-    }
+  {
+    printf("%s\n", "Failed to malloc");
+    exit(1);
+  }
   
   new->data  = data;
   new->right = NULL;
@@ -88,14 +88,14 @@ User* newUser(char* name, int socket)
 {
   User* newUser = (User*)malloc(sizeof(User));
   if ( newUser == NULL )   
-    {
-      printf("%s\n", "Failed to malloc");
-      exit(1);
-    }
+  {
+    printf("%s\n", "Failed to malloc");
+    exit(1);
+  }
 
   newUser->id = name;
   newUser->socket = socket;
-
+  
 #if DEBUG 
   printf("%s\n", "New user created.");
 #endif
@@ -117,10 +117,10 @@ Tree* addUser(Tree* t, char* id, int socket)
 Node* addUserHelper(Node* current, User* data)
 {
   if ( current == NULL )
-    {
-      return newNode(data);
-    }
-
+  {
+    return newNode(data);
+  }
+  
   int c = compare( current->data, data );
   if      ( c > 0 ) current->left  = addUserHelper( current->left,  data ); //current is greater, go left
   else if ( c < 0 ) current->right = addUserHelper( current->right, data ); //current is smaller, go right
@@ -145,21 +145,56 @@ Node* removeUserHelper(Node* current, User* data)
   else //the target is found 
   {
     if ( current->left == NULL ) 
-      {
-	Node *temp = current->right;
-	deleteNode( current );
-	return temp;
-      }
+    {
+      Node *temp = current->right;
+      deleteNode( current );
+      return temp;
+    }
     else if ( current->right == NULL)
-      {
-	Node *temp = current->left;
-	deleteNode( current );
-	return temp;
-      }
+    {
+      Node *temp = current->left;
+      deleteNode( current );
+      return temp;
+    }
+    
+    Node* temp     = min( current->right );
+    current->data  = temp->data;
+    current->right = removeUserHelper( current->right, temp->data );
+  }
+  return current;
+}
+
+Node* deleteUser(Tree* t, char* data)
+{
+  return deleteUserHelper(t->root, data);
+}
+
+Node* deleteUserHelper(Node* current, char* data)
+{
+  if ( current == NULL ) 
+    return current; //not found
+  
+  int c = strcmp( current->data->id, data );
+  if      ( c > 0 ) current->left  = deleteUserHelper( current->left,  data ); //current is greater, go left
+  else if ( c < 0 ) current->right = deleteUserHelper( current->right, data ); //current is smaller, go right
+  else //the target is found 
+  {
+    if ( current->left == NULL ) 
+    {
+      Node *temp = current->right;
+      deleteNodeData( current );
+      return temp;
+    }
+    else if ( current->right == NULL)
+    {
+      Node *temp = current->left;
+      deleteNodeData( current );
+      return temp;
+    }
   
     Node* temp = min( current->right );
     current->data = temp->data;
-    current->right = removeUserHelper( current->right, temp->data );
+    current->right = deleteUserHelper( current->right, temp->data->id );
   }
   return current;
 }
@@ -179,7 +214,7 @@ User* findUserHelper(Node* current, char* data)
 {
   if ( current == NULL )
     return NULL;
-
+  
   int c = strcmp( current->data->id, data );
   if      ( c > 0 ) return findUserHelper( current->left,  data ); //current is greater, go left
   else if ( c < 0 ) return findUserHelper( current->right, data ); //current is smaller, go right

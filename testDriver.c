@@ -57,9 +57,55 @@ int main()
 
   char* t1;
 
+
+//more tests on delete user
+  printf("testing removeUser\n");
+  Tree* t4 = newTree();
+  addUser(t4, "james", 12);
+  addUser(t4, "ann", 12);
+  addUser(t4, "bob", 12);
+  addUser(t4, "robert", 12);
+  addUser(t4, "pop", 12);
+  addUser(t4, "teemo", 12);
+
+  displayTree(t4);
   
+  removeUser(t4, findUser(t4, "james"));
+  removeUser(t4, findUser(t4, "ann"));
+  removeUser(t4, findUser(t4, "bob"));
+  removeUser(t4, findUser(t4, "robert"));
+  removeUser(t4, findUser(t4, "pop"));
+// removeUser(t4, findUser(t4, "teemo"));
+  displayTree(t4);
+//  removeUser(t4, findUser(t4, "teemo"));
 
- 
+  char* ss1 = calloc(sizeof(char),10); strcat(ss1, "james");
+  char* ss2 = calloc(sizeof(char),10); strcat(ss2, "ann");
+  char* ss3 = calloc(sizeof(char),10); strcat(ss3, "bob");
+  char* ss4 = calloc(sizeof(char),10); strcat(ss4, "robert");
+  char* ss5 = calloc(sizeof(char),10); strcat(ss5, "pop");
+  char* ss6 = calloc(sizeof(char),10); strcat(ss6, "teemo");
+  
+  //more tests on delete user
+  printf("testing deleteUser\n");
+  Tree* t3 = newTree();
+  addUser(t3, ss1, 12);
+  addUser(t3, ss2, 12);
+  addUser(t3, ss3, 12);
+  addUser(t3, ss4, 12);
+  addUser(t3, ss5, 12);
+  addUser(t3, ss6, 12);
 
+  displayTree(t3);
+  
+  deleteUser(t3, ss1);
+  deleteUser(t3, ss2);
+  deleteUser(t3, ss3);
+  deleteUser(t3, ss4);
+  deleteUser(t3, ss5);
+  deleteUser(t3, ss6);
+
+  displayTree(t3);
+  
   return 0;
 }
