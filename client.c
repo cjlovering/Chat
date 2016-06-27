@@ -10,17 +10,19 @@
 #include <errno.h>
 #include <signal.h>
 
+#include <string.h>
 #include  <signal.h>
 #include "client.h"
+#include "utility.h"
 
 #define DEBUG (1)
 
 void error(const char *msg);
-void inthandler(int sig);
 void* writer(void* user);
 void* reader(void* user);
 int verify(char* username);
-
+void printUsage(void);
+void closeClientConnection(void);
 
 int sockfd;
 static volatile int running = 1;
@@ -87,8 +89,6 @@ int main(int argc, char *argv[])
     printf("Hi %s! Welcome to that chat!\n", username);
   }
 
-  //signal(SIGINT, inthandler);
-
   pthread_t threads[2];
 
   if( pthread_create( &threads[0], NULL, writer, (void *)username ) != 0 )
@@ -121,17 +121,37 @@ void* writer(void* username)
     fgets(buffer,255,stdin);
     if((buffer[0] == '\n')|(strlen(buffer) == 0))
       continue;
-    
-    if (strcmp(buffer, "exit") == 0)
+    else if (strcmpc(trim(buffer), "exit")  == 0 ||
+             strcmpc(trim(buffer), "quit")  == 0 ||
+             strcmpc(trim(buffer), "leave") == 0 ||
+             strcmpc(trim(buffer), "q")     == 0)
     {
+      printf("exiting now!\n");
       running = 0;
+
+      continue;                                                            
+    }
+    else if (strcmpc(trim(buffer), "help")  == 0 ||
+             strcmpc(trim(buffer), "info")  == 0 ||
+             strcmpc(trim(buffer), "h")  == 0)
+    {
+      printUsage();
       continue;
     }
+
     n = send(sockfd,buffer,strlen(buffer), MSG_NOSIGNAL);
+
     if (n < 0) 
       error("ERROR writing to socket");
   }  
   //handle exit
+#if DEBUG
+  printf("exiting....\n");
+#endif
+
+  char* leave = "_EXIT_";
+  n = send(sockfd,leave,strlen(leave), MSG_NOSIGNAL);
+  closeClientConnection();
 }
 
 void* reader(void* null)
@@ -145,6 +165,14 @@ void* reader(void* null)
       n = recv(sockfd,buffer,255,0);
       if (n < 0)
         error("ERROR reading from socket");
+
+      char* leave = "_SERVER_EXIT_";
+      if ( strncmp(buffer, leave, strlen(leave)) == 0 )
+      {
+	printf("Server went down, exiting...\n");
+	closeClientConnection();
+      }
+      
       printf("%s\n",buffer);
     }
 }
@@ -178,11 +206,29 @@ void error(const char *msg)
   exit(0);
 }
 
-void inthandler(int sig)
+void sigint_handler(int sig)
 {
   printf("Leaving server...\n");
   running = 0;
+}//do nothing
+
+void closeClientConnection(void)
+{
+  //free everything
+
+  //close threads
+  
+  exit(0);
 }
 
-void sigint_handler(int sig)
-{}//do nothing
+void printUsage(void)
+{
+  printf("---------------------------------------------\n");
+  printf("This is the Server for the Chat.\n");
+  printf("info / help / h      = printUsage\n");
+  printf("quit / exit / leave / q  = ends service\n");
+  printf("list / l                 = shows all clients\n");
+  printf("YOUR_MESSAGE  = sends to everyone in room\n");
+  printf("whisper USER \"message\"\n");
+  printf("---------------------------------------------\n");
+}

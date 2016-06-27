@@ -1,4 +1,5 @@
 #include "tree.h"
+#include "utility.h"
 
 int main()
 {
@@ -39,6 +40,17 @@ int main()
 
   if (!validate(t2, "Rock")) printf("Correctly did not validate.\n");
   else printf("ERROR\n");
+
+  //trim
+
+  char* s1 = malloc(sizeof(char) * 20);//"hello";
+  char* s2 = malloc(sizeof(char) * 20);//"hello";"   hello\n ";
+  strcpy(s1, "hello");
+  strcpy(s2, "   hello\n ");
+  
+  if (strcmp(s1, trim( s2 )) == 0) printf("trim worked\n");
+  else printf("trim did not work\n");
+  
 
   return 0;
 }

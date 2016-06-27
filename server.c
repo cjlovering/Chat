@@ -16,6 +16,8 @@
 
 #include "server.h"
 #include "tree.h"
+#include "utility.h"
+
 
 static volatile int running = 1;
 
@@ -24,8 +26,12 @@ int prompt(int sock);
 int parse (char* message, int sock);
 void* connection (void *sock_void);
 void* interactive(void *zero);
-char* trim(char* str);
 void sigint_handler(int sig); /* prototype */
+void printUsage(void);
+void destroyServer(void);
+void sendAll(char* msg);
+void sendAllHelper(char* msg, Node* n);
+
  
 void error(const char *msg)
 {
@@ -165,22 +171,42 @@ int main(int argc, char *argv[])
 int parse (char* message, int sock)
 {
   int n;
-  printf("Got: %s", message);
-  n = send(sock,"message recieved",15, MSG_NOSIGNAL);
-  if (n < 0) error("ERROR writing to socket");
+  char* leave = "_EXIT_";
+  
+  if ( strncmp(message, leave, strlen(leave)) == 0)
+  {
+    printf("USER leaving");
+    //client leaving
+    //remove him from users
+    
+    //close the connection
+    
+    //let all the users know he's leaving
+
+    return 0;
+  }
+  //else if ( strcmp(message, "__") == 0)
+  else 
+  {
+    //message all others
+    n = send(sock,"message recieved",15, MSG_NOSIGNAL);
+    if (n < 0) error("ERROR writing to socket");
+  }
+
   return 1;
 }
 
 int prompt(int sock)
 {
   int n;
-  char buffer[256];
-      
+  char* buffer = malloc(sizeof(char) * 255);
   bzero(buffer,256);
   n = read(sock, buffer, 255);
   if (n < 0) error("ERROR reading from socket");
-  
-  return parse( buffer, sock ); //0, stop. 1, continue.
+  buffer = trim( buffer );
+  int value = parse( buffer, sock ); //0, stop. 1, continue.
+  free(buffer);
+  return value;
 }
 
 
@@ -192,7 +218,7 @@ int prompt(int sock)
 void* connection (void *sock_void)
 {
   int sock = (intptr_t)sock_void;
-  while (running){ prompt ( sock ); }
+  while ( prompt ( sock ) ) {}
   printf("closing connection");
   close(sock);  //maybe don't want to do this.
   sem_post(&active_connections); //release spot in the queue
@@ -209,20 +235,26 @@ void* interactive(void *zero)
     fgets(buffer,255,stdin);
     if((buffer[0] == '\n')|(strlen(buffer) == 0))
       continue;
-    printf("input = %s\n", buffer);
-    if (strcmp(trim(buffer), "exit") == 0)
+    else if (strcmpc(trim(buffer), "exit")  == 0 ||
+	     strcmpc(trim(buffer), "quit")  == 0 ||
+	     strcmpc(trim(buffer), "leave") == 0 ||
+	     strcmpc(trim(buffer), "q")     == 0)
     {
-      printf("exiting now!\n");
-      running = 0;
-      continue;
+      destroyServer();
+      //continue;
     }
+    else if (strcmpc(trim(buffer), "help")  == 0 ||
+	     strcmpc(trim(buffer), "info")  == 0 ||
+	     strcmpc(trim(buffer), "h")  == 0)
+    {
+      printUsage();
+    }
+
   }
 
  //close all threads
 
  //end all clients
-
-
 }
 
 /* mutex functions */
@@ -238,25 +270,50 @@ void EndRegion()
 
 void sigint_handler(int sig)
 {
-  printf("Ignoring interrupt. If you want to kill the server, enter: exit");
+  printf("Ending server.");
+  running = 0;
 }
 
-char* trim(char* str)
+void destroyServer(void)
 {
-  char *end;
+  printf("Destroying server!\n");
 
-  // Trim leading space
-  while(isspace(*str)) str++;
+  //tell users to leave
+  sendAll("_SERVER_EXIT_");
 
-  if(*str == 0)  // All spaces?
-    return str;
+  //free users
 
-  // Trim trailing space
-  end = str + strlen(str) - 1;
-  while(end > str && isspace(*end)) end--;
+  //end threads
 
-  // Write new null terminator
-  *(end+1) = '\0';
+  printf("Done\n");
+  exit(0);
+}
 
-  return str;
+void sendAll(char* msg)
+{
+  sendAllHelper(msg, users->root);
+}
+
+void sendAllHelper(char* msg, Node* n)
+{
+  if (n == NULL) return;
+
+  int socket  = n->data->socket;
+  char* leave = "_SERVER_EXIT_";
+  
+  int i = send(socket, leave, strlen(leave), MSG_NOSIGNAL);
+  if (i < 0) error("ERROR reading from socket");
+
+  sendAllHelper(msg, n->left);
+  sendAllHelper(msg, n->right);
+}
+
+void printUsage(void)
+{
+  printf("---------------------------------------------\n");
+  printf("This is the Server for the Chat.\n");
+  printf("info / help / h      = printUsage\n");
+  printf("quit / exit / leave / q  = ends service\n");
+  printf("list / l                 = shows all users\n"); 
+  printf("---------------------------------------------\n");
 }

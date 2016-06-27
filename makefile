@@ -1,13 +1,13 @@
 all: server client testDriver
 
-server: server.o tree.o
-	gcc server.o tree.o -pthread -g -o server
+server: server.o tree.o utility.o
+	gcc server.o tree.o utility.o -pthread -g -o server
 
 server.o: server.h server.c
 	gcc -pthread -g -c server.c
 
-client: client.o
-	gcc client.o  -pthread -g -o client
+client: client.o utility.o
+	gcc client.o utility.o -pthread -g -o client
 
 client.o: client.h  client.c
 	gcc -pthread -g -c client.c
@@ -15,12 +15,14 @@ client.o: client.h  client.c
 tree.o: tree.h tree.c
 	gcc -pthread -g -c tree.c
 
-testDriver: testDriver.o tree.o
-	gcc testDriver.o tree.o -pthread -g -o testDriver
+testDriver: testDriver.o tree.o utility.o
+	gcc testDriver.o tree.o utility.o -pthread -g -o testDriver
 
 testDriver.o: testDriver.c
 	gcc -pthread -g -c testDriver.c
 
+utility.o: utility.h utility.c
+	gcc -pthread -g -c utility.c
 
 clean:
 	rm *.o
