@@ -55,7 +55,10 @@ int main()
   char* s3 = "_EXIT_ user";
   char* s4 = "_EXIT";
 
-
+  char* t1;
+  scanf( here
+  
+  printf("result: %s\n", t1);
   //scanf
   
 

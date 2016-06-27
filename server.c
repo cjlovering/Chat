@@ -171,16 +171,25 @@ int parse (char* message, int sock)
 {
   int n;
   char* leave = "_EXIT_";
+
+  char* inputs[100];
+  char* parsed = strok(message, " ");
+  int i = 0;
   
-  printf("PARSE!\n");
-  printf("%s\n", message);
-
-
-  if ( strncmp(message, leave, strlen(leave)) == 0)
+  while (inputMessages != NULL)
   {
-    char* name;
-    char* key;
-    scanf("%s %s", key, name);
+    parsed[i] = inputMessages;
+    i++;
+    parsed = strok(message, " ");
+  }
+
+  printf("PARSE!\n");
+  printf("%s\n", parsed[0]);
+
+  if ( strncmp(parsed[0], leave, strlen(leave)) == 0)
+  {
+    char* name = parsed[1];
+//    scanf("%s %s", key, name);
  
     printf("USER %s leaving", name);
     //client leaving
