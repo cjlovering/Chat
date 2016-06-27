@@ -169,18 +169,22 @@ int main(int argc, char *argv[])
 
 int parse (char* message, int sock)
 {
+
+  printf("PARSE!  -> %s\n", message);
+  
   int n;
   char* leave = "_EXIT_";
-
-  char* inputs[100];
-  char* parsed = strok(message, " ");
+  char* saveptr1;
+  char* parsed[100];
+  char* inputMessages = strtok_r(message, " ", &saveptr1);
   int i = 0;
   
   while (inputMessages != NULL)
   {
+    printf("input m: %s", inputMessages);
     parsed[i] = inputMessages;
     i++;
-    parsed = strok(message, " ");
+    inputMessages = strtok_r(NULL, " \r\t\n", &saveptr1);
   }
 
   printf("PARSE!\n");

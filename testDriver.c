@@ -56,10 +56,7 @@ int main()
   char* s4 = "_EXIT";
 
   char* t1;
-  scanf( here
-  
-  printf("result: %s\n", t1);
-  //scanf
+
   
 
  
