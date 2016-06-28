@@ -1,6 +1,9 @@
 //This file has functions used in both server.c and client.c
 
 #include "utility.h"
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -51,3 +54,8 @@ int strcmpc (const char *p1, const char *p2)
   return c1 - c2;
 }
 
+void error(const char *msg)
+{
+  perror(msg);
+  exit(1);
+}  

@@ -1,5 +1,5 @@
 #include "tree.h"
-#define DEBUG (1)
+#define DEBUG (0)
 
 int validate(Tree* t, char* username)
 {
@@ -31,7 +31,7 @@ void displayTree(Tree* t)
 {
   if (t->root == NULL) 
   {
-    printf("<none>\n");
+    printf("<none>");
     return;
   }
   
