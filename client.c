@@ -266,7 +266,7 @@ void printUsage(void)
   printf("quit / exit / leave / q  = ends service\n");
   printf("list / l / users         = shows all clients\n");
   printf("YOUR_MESSAGE             = sends to everyone in room\n");
-  printf("whisper USER message\n");
+  printf("whisper/w USER message*  = to send secret messages\n");
   printf("---------------------------------------------\n");
 }
 

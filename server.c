@@ -224,6 +224,50 @@ int parse (char* message, int sock)
     if (i < 0) 
       error("ERROR reading from socket");
   }
+  else if ( strncmp(parsed[1], "whisper", strlen("whisper")) == 0 ||
+	    strncmp(parsed[1], "w",  strlen("w")) == 0 )
+  {
+    //create message
+    //    if(i < 3)
+
+    char* secret = calloc(sizeof(char), 255+25);
+    char* from   = parsed[0];
+    char* to     = parsed[2];
+    strcat(secret, "Whisper from ");
+    strcat(secret, from);
+    strcat(secret, ": ");
+
+    
+
+    User* u = findUser(users, to);
+
+    if (u == NULL)
+    {
+      int index = 3;
+      while(parsed[index]!=NULL&&strlen(trim(parsed[index]))!=0)
+      {
+	strcat(secret, parsed[index++]);
+	strcat(secret, " ");
+      }
+
+      int j = send(u->socket, secret, strlen(secret), MSG_NOSIGNAL);
+      if (j < 0) 
+	error("ERROR reading from socket");    
+      char* confirmation = calloc(sizeof(char), 40);
+      strcat(confirmation, "Whisper to ");
+      strcat(confirmation, to);
+      strcat(confirmation, "successful...");
+    } 
+    else
+    {
+      int j = send(sock, "User not found\n", strlen("User not found\n"), MSG_NOSIGNAL);
+      if (j < 0) 
+	error("ERROR reading from socket");      
+    }
+    free(secret);
+    
+    
+  }
   else 
   {
     //message all others
