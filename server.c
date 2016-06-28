@@ -206,7 +206,7 @@ int parse (char* message, int sock)
     char* userLeaving = malloc(sizeof(char) * 150);
     if (userLeaving ==  NULL)  error("malloc failed");
     
-    strcat(userLeaving, ">>> ");
+    strcat(userLeaving, "\n");
     strcat(userLeaving, name);
     strcat(userLeaving, " has left Chat.\n");    
     
@@ -233,15 +233,42 @@ int parse (char* message, int sock)
     char* secret = calloc(sizeof(char), 255+25);
     char* from   = parsed[0];
     char* to     = parsed[2];
-    strcat(secret, "Whisper from ");
+
+    //whisper to yourself
+    if (strcmp(to, from) == 0)
+    {
+      char* confirmation = calloc(sizeof(char), 40);
+      strcat(confirmation, "Note to self: ");
+
+      int index = 3;
+      while(parsed[index]!=NULL&&strlen(trim(parsed[index]))!=0)
+      {
+	strcat(confirmation, parsed[index++]);
+	strcat(confirmation, " ");
+      }
+
+      send(sock, confirmation, strlen(confirmation), MSG_NOSIGNAL);
+
+      free(confirmation);
+      return 1;
+    }
+
+
+    //error checking
+    if (secret == NULL || to == NULL)
+    {
+      char* errorMsg = "malformed whisper request.";
+      send(sock, errorMsg, strlen(errorMsg), MSG_NOSIGNAL);
+      return 1;
+    }
+
+    strcat(secret, "\nWhisper from ");
     strcat(secret, from);
     strcat(secret, ": ");
-
-    
-
+   
     User* u = findUser(users, to);
 
-    if (u == NULL)
+    if (u != NULL)
     {
       int index = 3;
       while(parsed[index]!=NULL&&strlen(trim(parsed[index]))!=0)
@@ -256,7 +283,10 @@ int parse (char* message, int sock)
       char* confirmation = calloc(sizeof(char), 40);
       strcat(confirmation, "Whisper to ");
       strcat(confirmation, to);
-      strcat(confirmation, "successful...");
+      strcat(confirmation, " successful...");
+      send(sock, confirmation, strlen(confirmation), MSG_NOSIGNAL);
+      free(confirmation);
+
     } 
     else
     {
