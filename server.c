@@ -31,7 +31,10 @@ void printUsage(void);
 void destroyServer(void);
 void sendAll(char* msg);
 void sendAllHelper(char* msg, Node* n);
-
+void sendAllBut(char* msg1, char* msg2, char* name);
+void sendAllHelperBut(char* msg1, char* msg2, char* name, Node* n);
+void populateList(char* list);
+void populateListHelper(char* list, Node* n);
  
 void error(const char *msg)
 {
@@ -172,7 +175,7 @@ int parse (char* message, int sock)
   int n;
   char* leave = "_EXIT_";
   char* saveptr1;
-  char* parsed[100];
+  char* parsed[100] = {0};
   char* inputMessages = strtok_r(message, " ", &saveptr1);
   int i = 0;
   
@@ -182,6 +185,8 @@ int parse (char* message, int sock)
     i++;
     inputMessages = strtok_r(NULL, " \r\t\n", &saveptr1);
   }
+
+  if (parsed[0] == NULL) return 1;
 
   if ( strncmp(parsed[0], leave, strlen(leave)) == 0)
   {
@@ -198,7 +203,6 @@ int parse (char* message, int sock)
     //close the connection
     //let all the users know he's leaving
 
-#if 0   
     char* userLeaving = malloc(sizeof(char) * 150);
     if (userLeaving ==  NULL)  error("malloc failed");
     
@@ -208,16 +212,42 @@ int parse (char* message, int sock)
     
     sendAll(userLeaving); 
     free(userLeaving);
-#endif
     
     return 0;
   }
-  //else if ( strcmp(message, "__") == 0)
+  else if ( strncmp(parsed[0], "list", strlen("list")) == 0 ||
+	    strncmp(parsed[0], "l",  strlen("l")) == 0 )
+  {
+    char* listOfUsers = calloc(sizeof(char*), 10 + 22 * MAX_CLIENTS);
+    populateList(listOfUsers);
+    int i = send(sock, listOfUsers, strlen(listOfUsers), MSG_NOSIGNAL);
+    if (i < 0) 
+      error("ERROR reading from socket");
+  }
   else 
   {
     //message all others
-    n = send(sock,"message recieved",15, MSG_NOSIGNAL);
-    if (n < 0) error("ERROR writing to socket");
+    char* reconstruct = calloc(sizeof(char), (20 + 255));
+    char* reconstructBut = calloc(sizeof(char), (4 + 255));
+    strcat(reconstruct, "\n");
+    strcat(reconstructBut, "Me: ");
+
+    strcat(reconstruct, parsed[0]);
+    strcat(reconstruct, ": ");
+
+    int i = 1;
+    while(parsed[i]!=NULL&&strlen(trim(parsed[i]))!=0)
+    {
+      strcat(reconstruct, parsed[i]);
+      strcat(reconstruct, " ");
+      strcat(reconstructBut, parsed[i++]);
+      strcat(reconstructBut, " ");
+    }
+    
+    sendAllBut(reconstruct, reconstructBut, parsed[0]);
+
+    free(reconstruct);
+    free(reconstructBut);
   }
 
   return 1;
@@ -229,10 +259,13 @@ int prompt(int sock)
   char* buffer = malloc(sizeof(char) * 255);
   bzero(buffer,256);
   n = read(sock, buffer, 255);
-  if (n < 0) error("ERROR reading from socket");
+  
+  if (n < 0) 
+    error("ERROR reading from socket");
   buffer = trim( buffer );
   int value = parse( buffer, sock ); //0, stop. 1, continue.
   free(buffer);
+  
   return value;
 }
 
@@ -276,7 +309,14 @@ void* interactive(void *zero)
     {
       printUsage();
     }
-
+    else if (strcmpc(trim(buffer), "list")  == 0 ||
+	     strcmpc(trim(buffer), "l")  == 0 ||
+	     strcmpc(trim(buffer), "users")  == 0)
+    {
+      printf("Active Users: ");
+      displayTree(users);
+      printf("\n");
+    }
   }
 
  //close all threads
@@ -317,9 +357,7 @@ void destroyServer(void)
 
 void sendAll(char* msg)
 {
-  printf("sendall\n");
   if(users != NULL) sendAllHelper(msg, users->root);
-  printf("sendall\n");
 }
 
 void sendAllHelper(char* msg, Node* n)
@@ -327,13 +365,53 @@ void sendAllHelper(char* msg, Node* n)
   if (n == NULL) return;
 
   int socket  = n->data->socket;
-  char* leave = "_SERVER_EXIT_";
   
-  int i = send(socket, leave, strlen(leave), MSG_NOSIGNAL);
+  int i = send(socket, msg, strlen(msg), MSG_NOSIGNAL);
   if (i < 0) error("ERROR reading from socket");
 
   sendAllHelper(msg, n->left);
   sendAllHelper(msg, n->right);
+}
+
+void sendAllBut(char* msg1, char* msg2, char* name)
+{
+  if(users != NULL) sendAllHelperBut(msg1, msg2, name,  users->root);
+}
+
+void sendAllHelperBut(char* msg1, char* msg2, char* name, Node* n)
+{
+  if (n == NULL) return;
+
+  int socket  = n->data->socket;
+  int i;
+
+  if (strcmp(n->data->id, name)==0)
+    i = send(socket, msg2, strlen(msg2), MSG_NOSIGNAL);
+  else
+    i = send(socket, msg1, strlen(msg1), MSG_NOSIGNAL);
+
+  if (i < 0) error("ERROR reading from socket");
+
+  sendAllHelperBut(msg1, msg2, name, n->left);
+  sendAllHelperBut(msg1, msg2, name, n->right);
+}
+
+void populateList(char* list)
+{
+  if (users == NULL) return;
+  
+  populateListHelper(list, users->root);
+}
+
+void populateListHelper(char* list, Node* n)
+{
+  if (n == NULL) return;
+
+  strcat(list, n->data->id);
+  strcat(list, " ");
+ 
+  populateListHelper(list, n->left);
+  populateListHelper(list, n->right);
 }
 
 void printUsage(void)

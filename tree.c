@@ -29,9 +29,13 @@ int validateHelper(Node* current, char* data)
 
 void displayTree(Tree* t)
 {
-  printf("------------------------------\n");
+  if (t->root == NULL) 
+  {
+    printf("<none>\n");
+    return;
+  }
+  
   displayTreeHelper(t->root);
-  printf("\n------------------------------\n");
 }
 
 void displayTreeHelper(Node* current)
@@ -49,7 +53,7 @@ int compare(User* a, User* b)
 
 Tree* newTree()
 {
-  Tree* newTree  = (Tree*)malloc(sizeof(Tree));
+  Tree* newTree  = (Tree*)calloc(sizeof(Tree), 1);
 
   if ( newTree == NULL  )
   {
@@ -92,8 +96,8 @@ User* newUser(char* name, int socket)
     printf("%s\n", "Failed to malloc");
     exit(1);
   }
-
-  newUser->id = name;
+  
+  newUser->id = calloc(sizeof(char), 20); strncpy(newUser->id, name, 20);
   newUser->socket = socket;
   
 #if DEBUG 
@@ -131,7 +135,8 @@ Node* addUserHelper(Node* current, User* data)
 
 Node* removeUser(Tree* t, User* data)
 {
-  return removeUserHelper(t->root, data);
+  t->root = removeUserHelper(t->root, data);
+  return t->root;
 }
 
 Node* removeUserHelper(Node* current, User* data)
@@ -166,7 +171,8 @@ Node* removeUserHelper(Node* current, User* data)
 
 Node* deleteUser(Tree* t, char* data)
 {
-  return deleteUserHelper(t->root, data);
+  t->root = deleteUserHelper(t->root, data);
+  return t->root;
 }
 
 Node* deleteUserHelper(Node* current, char* data)
@@ -193,8 +199,14 @@ Node* deleteUserHelper(Node* current, char* data)
     }
   
     Node* temp = min( current->right );
+
+#if DEBUG
+    if (temp != NULL) printf("min: %s", temp->data->id);
+#endif
+
     current->data = temp->data;
-    current->right = deleteUserHelper( current->right, temp->data->id );
+    //we can't delete the string, because its needed!!
+    current->right = removeUserHelper( current->right, temp->data );
   }
   return current;
 }

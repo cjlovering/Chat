@@ -89,6 +89,7 @@ int main(int argc, char *argv[])
   else
   {
     printf("Hi %s! Welcome to that chat!\n", username);
+    fflush(stdout);
   }
 
   pthread_t threads[2];
@@ -113,16 +114,23 @@ int main(int argc, char *argv[])
 
 void* writer(void* username)
 {
-  char buffer[256];
+  char* buffer = calloc(sizeof(char), 256);
+  char* toBeFreed = buffer;//saving a ptr to start of ptr to be able to free it
   int n;
+  int first = 0;
 
   while(running)
   {
-    printf("--> ");
+    if (first) printf("--> ");
+    else first = 1;
     bzero(buffer,256);
     fgets(buffer,255,stdin);
-    if((buffer[0] == '\n')|(strlen(buffer) == 0))
+
+    buffer = trim(buffer);
+
+    if(strlen(buffer) == 0)
       continue;
+
     else if (strcmpc(trim(buffer), "exit")  == 0 ||
              strcmpc(trim(buffer), "quit")  == 0 ||
              strcmpc(trim(buffer), "leave") == 0 ||
@@ -140,16 +148,33 @@ void* writer(void* username)
       printUsage();
       continue;
     }
+    else if (strcmpc(trim(buffer), "list")  == 0 ||
+	     strcmpc(trim(buffer), "users")  == 0 ||
+             strcmpc(trim(buffer), "l")  == 0)
+    {
+      n = send(sockfd,"list",strlen("list"), MSG_NOSIGNAL);
+    
+      if (n < 0) 
+	error("ERROR writing to socket");
+      
+      continue;
+    }
 
-    n = send(sockfd,buffer,strlen(buffer), MSG_NOSIGNAL);
-
+    char* bufferMessage = calloc(sizeof(char), (20 + 255));
+    strcat(bufferMessage, username);
+    strcat(bufferMessage, " ");
+    strcat(bufferMessage, buffer);
+    
+    n = send(sockfd,bufferMessage,strlen(bufferMessage), MSG_NOSIGNAL);
+    
     if (n < 0) 
       error("ERROR writing to socket");
+
+    free(bufferMessage);
   }  
+
   //handle exit
-#if DEBUG
-  printf("exiting....\n");
-#endif
+  free(toBeFreed);
   leaveServer();
   closeClientConnection();
 }
@@ -237,11 +262,11 @@ void printUsage(void)
 {
   printf("---------------------------------------------\n");
   printf("Hi %s! Welcome to the Chat.\n", username);
-  printf("info / help / h      = printUsage\n");
+  printf("info / help / h          = printUsage\n");
   printf("quit / exit / leave / q  = ends service\n");
-  printf("list / l                 = shows all clients\n");
-  printf("YOUR_MESSAGE  = sends to everyone in room\n");
-  printf("whisper USER \"message\"\n");
+  printf("list / l / users         = shows all clients\n");
+  printf("YOUR_MESSAGE             = sends to everyone in room\n");
+  printf("whisper USER message\n");
   printf("---------------------------------------------\n");
 }
 

@@ -57,7 +57,7 @@ int main()
 
   char* t1;
 
-
+#if 1
 //more tests on delete user
   printf("testing removeUser\n");
   Tree* t4 = newTree();
@@ -106,6 +106,33 @@ int main()
   deleteUser(t3, ss6);
 
   displayTree(t3);
+#endif
+  printf("testing deleteUser again\n");
+
+  Tree* t5 = newTree();
+  displayTree(t5);
+  addUser(t5, "bob", 12);
+  displayTree(t5);
+  addUser(t5, "robert", 12);
+  displayTree(t5);
+  addUser(t5, "aaa", 12);
+  displayTree(t5);
+  addUser(t5, "bbb", 12);
+  displayTree(t5);
+  addUser(t5, "ccc", 12);
+  displayTree(t5);
   
+  deleteUser(t5, "bob");
+  displayTree(t5);
+  deleteUser(t5, "robert");
+  displayTree(t5);
+  deleteUser(t5, "aaa");
+  displayTree(t5);
+  deleteUser(t5, "bbb");
+  displayTree(t5);
+  deleteUser(t5, "ccc");
+  displayTree(t5);
+
+
   return 0;
 }
