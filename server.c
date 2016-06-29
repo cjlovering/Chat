@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
   users = newTree();
 
   /* core loop handling connecting clients */
+  /* thus, the original thread is the commissioner */
   while (running) 
   {    
     sem_wait( &active_connections );
@@ -88,7 +89,7 @@ int main(int argc, char *argv[])
     int n = read(newsockfd, userbuffer, 255);
     if (n < 0) error("ERROR reading from socket");
 
-    printf("New user %s attempting to join...\n", userbuffer);
+    printf("| New user %s attempting to join...", userbuffer);
     
     //determine if user is unique
     int valid;
@@ -111,7 +112,7 @@ int main(int argc, char *argv[])
       char* others  = calloc(sizeof(char), 155);
 
       strcat(newUser, "| Others in the chat see you joined!");
-      strcat(others, "\n| New Chatter: ");
+      strcat(others, "\n| New User: ");
       strcat(others, userbuffer);
       strcat(others, " is now in the room!");
       
@@ -128,13 +129,9 @@ int main(int argc, char *argv[])
       close(newsockfd);
       printf("User %s is invalid and connection was dropped.\n", userbuffer);
       continue;
-      //for now just end it!
       //continue;
     }
-   
-    //TODO: implement  -->
-    //threads.push( current_thread );
-
+  
     if( pthread_create( &current_thread, NULL, connection, (void*)(intptr_t)newsockfd ) != 0 )
     {
       perror("pthread_create");
@@ -171,7 +168,6 @@ void* connection (void *sock_void)
 {
   int sock = (intptr_t)sock_void;
   while ( prompt ( sock ) ) {}
-  printf("closing connection");
   close(sock);  //maybe don't want to do this.
   sem_post(&active_connections); //release spot in the queue
 }
@@ -239,7 +235,7 @@ int parse (char* message, int sock)
     char* userLeaving = calloc(sizeof(char), 150);
     if (userLeaving ==  NULL)  error("malloc failed");
     
-    strcat(userLeaving, "\n");
+    strcat(userLeaving, "\n| ");
     strcat(userLeaving, name);
     strcat(userLeaving, " has left Chat.");    
     
@@ -283,9 +279,6 @@ int parse (char* message, int sock)
     strcat(informOthers, parsed[0]);
     strcat(informOthers, " is now ");
     strcat(informOthers, newName);
-
-    printf("informothers: %s\n", informOthers);
-    printf("msgme: %s\n", msgMe);
       
     sendAllBut(informOthers, msgMe, newName);
     
@@ -306,7 +299,7 @@ int parse (char* message, int sock)
     //error checking
     if (secret == NULL || to == NULL)
     {
-      char* errorMsg = "malformed whisper request.";
+      char* errorMsg = "| malformed whisper request.";
       send(sock, errorMsg, strlen(errorMsg), MSG_NOSIGNAL);
       return 1;
     }
@@ -314,8 +307,8 @@ int parse (char* message, int sock)
     //whisper to yourself?
     if (strcmp(to, from) == 0)
     {
-      char* confirmation = calloc(sizeof(char), 40);
-      strcat(confirmation, "Note to self: ");
+      char* confirmation = calloc(sizeof(char), 100);
+      strcat(confirmation, "| Note to self: ");
 
       int index = 3;
       while(parsed[index]!=NULL&&strlen(trim(parsed[index]))!=0)
@@ -376,8 +369,9 @@ int parse (char* message, int sock)
     char* reconstruct = calloc(sizeof(char), (20 + 255));
     char* reconstructBut = calloc(sizeof(char), (4 + 255));
     strcat(reconstruct, "\n");
-    strcat(reconstructBut, "Me: ");
+    strcat(reconstructBut, "| Me: ");
 
+    strcat(reconstruct, "| ");
     strcat(reconstruct, parsed[0]);
     strcat(reconstruct, ": ");
 
@@ -465,10 +459,11 @@ void destroyServer(void)
 
   //end threads
   printf("Canceling threads!\n");
-  for(int i = 0; i < thread_counter; i++)
+  int i = 0;
+  while( i < thread_counter )
   {
     printf("Canceling thread %d...\n", i);
-    pthread_cancel(threads[i]);
+    pthread_cancel(threads[i++]);
   }
   
   printf("Threads canceled.\n");  
@@ -534,7 +529,7 @@ void sendAllHelperBut(char* msg1, char* msg2, char* name, Node* n)
 void populateList(char* list)
 {
   if (users == NULL) return;
-  strcat(list, "Active Users:  ");
+  strcat(list, "| Active Users:  ");
   populateListHelper(list, users->root);
 }
 

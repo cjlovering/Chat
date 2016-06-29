@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
   }
 
  
-  if( pthread_create( &threads[0], NULL, writer, (void *)username ) != 0 )
+  if( pthread_create( &threads[0], NULL, writer, (void *)0 ) != 0 )
   {
     perror("pthread_create");
     exit(1);
@@ -98,11 +98,8 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-void* writer(void* username)
+void* writer(void* null)
 {
-//  char* buffer[256];// = calloc(sizeof(char), 256);
-  //it
-//  char* workingBuffer;// = calloc(sizeof(char), 256);
   int n;
   int first = 0;
 
@@ -115,9 +112,6 @@ void* writer(void* username)
     else first = 1;
     bzero(buffer,256);
     fgets(buffer,255,stdin);
-
-    //workingBuffer = calloc(sizeof(char), 256);
-    // strcat(workingBuffer, trim(buffer));
     
     buffer = trim(buffer);
 
@@ -170,13 +164,12 @@ void* writer(void* username)
       free(garb);
     }
 
-    printf("####");
     //normal chat message
     char* bufferMessage = calloc(sizeof(char), (20 + 255));
     strcat(bufferMessage, username);
     strcat(bufferMessage, " ");
     strcat(bufferMessage, buffer);
-    
+   
     n = send(sockfd,bufferMessage,strlen(bufferMessage), MSG_NOSIGNAL);
     
     if (n < 0) 
@@ -187,7 +180,6 @@ void* writer(void* username)
   }  
 
   //handle exit
-
   leaveServer();
   closeClientConnection();
 }
@@ -199,23 +191,7 @@ void leaveServer()
   strcat(leave, username);
   int n = send(sockfd, leave, strlen(leave), MSG_NOSIGNAL);
   if (n < 0)
-        error("ERROR writing to socket");
-  free(leave);
-}
-
-void changeName(char* newName)
-{
-  
-  char* leave = calloc(sizeof(char), 255);
-  strcat(leave, username);
-  strncat(leave, " change ", sizeof(" change "));
-  strcat(leave, newName);
-  
-  int n = send(sockfd, leave, strlen(leave), MSG_NOSIGNAL);
-  if (n < 0)
     error("ERROR writing to socket");
-  
-  //wait for confirmation from server that its a valid name    
   free(leave);
 }
 
@@ -234,7 +210,8 @@ void* reader(void* null)
     char* leave = "_SERVER_EXIT_";
     if ( strncmp(buffer, leave, strlen(leave)) == 0 )
     {
-      printf("| \nServer went down, exiting...\n");
+      printf("\n| Server went down, exiting...\n");
+      printf("|_________________________________________\n");
       closeClientConnection();
     }
 
@@ -244,11 +221,27 @@ void* reader(void* null)
     {
       free(username);
       username = calloc(sizeof(char), 20);
-      strcat(username, newName);//username = newName;
+      strcat(username, newName);
     }
     free(newName);
     printf("%s\n",buffer);
   }
+}
+
+void changeName(char* newName)
+{
+  
+  char* leave = calloc(sizeof(char), 255);
+  strcat(leave, username);
+  strncat(leave, " change ", sizeof(" change "));
+  strcat(leave, newName);
+  
+  int n = send(sockfd, leave, strlen(leave), MSG_NOSIGNAL);
+  if (n < 0)
+    error("ERROR writing to socket");
+  
+  //wait for confirmation from server that its a valid name    
+  free(leave);
 }
 
 int verify( char* username )
