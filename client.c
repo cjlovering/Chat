@@ -184,6 +184,9 @@ void* writer(void* null)
   closeClientConnection();
 }
 
+/**
+ * handles leaving the server
+ */
 void leaveServer()
 {
   char* leave = calloc(sizeof(char), (20 + 10));
@@ -195,6 +198,9 @@ void leaveServer()
   free(leave);
 }
 
+/**
+ * the reader thread
+ */
 void* reader(void* null)
 {
   char buffer[256];
@@ -228,6 +234,9 @@ void* reader(void* null)
   }
 }
 
+/**
+ * requests the server to change your name
+ */
 void changeName(char* newName)
 {
   
@@ -244,6 +253,9 @@ void changeName(char* newName)
   free(leave);
 }
 
+/**
+ * verifies that the name is ok
+ */
 int verify( char* username )
 {
   //write name to server
@@ -261,6 +273,9 @@ int verify( char* username )
   return valid;
 }
 
+/**
+ * interrupt handler
+ */
 void sigint_handler(int sig)
 {
   printf("| Leaving Chat...\n");
@@ -270,7 +285,6 @@ void sigint_handler(int sig)
 
 void closeClientConnection(void)
 {
-//  printf("| Connection terminated.\n");
   exit(0);
 }
 
@@ -286,14 +300,3 @@ void printUsage(void)
   printf("| whisper/w USER \"message\" = to send secret messages\n");
   printf("|---------------------------------------------\n");
 }
-
-char* formMessage(char* msg)
-{
-  char* result = malloc(sizeof(char) * (20 + 255));
-  strcpy(result, username);
-  strncat(result, " ", 1);
-  strncat(result, msg, 255);
-  return result;
-}
-
-
