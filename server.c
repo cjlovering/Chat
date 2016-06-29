@@ -227,7 +227,11 @@ int parse (char* message, int sock)
       printf("user not found");
       return 0;
     }
+
+    //closing the connection!
     close(u->socket);
+
+    //deleting user from tree
     deleteUser(users, name);
     
     //close the connection
@@ -357,7 +361,7 @@ int parse (char* message, int sock)
     else
     {
       //notify the FROM user that the TO user could not be found
-      int j = send(sock, "User not found", strlen("User not found"), MSG_NOSIGNAL);
+      int j = send(sock, "| User not found", strlen("| User not found"), MSG_NOSIGNAL);
       if (j < 0) 
 	error("ERROR reading from socket");      
     }
